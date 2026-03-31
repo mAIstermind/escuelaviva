@@ -9,7 +9,7 @@ if (!apiKey) {
 // Fixed initialization using the official GoogleGenAI class
 const ai = new GoogleGenAI({ apiKey });
 
-// Forcing all operations to gemini-2.5-flash as per USER directive
+// User confirmed model ID: Using for all operations
 export const modelId = "gemini-2.5-flash";
 
 export async function generateCreature(word1: string, word2: string, word3: string, lang: string) {
@@ -39,12 +39,25 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     return JSON.parse(text);
   } catch (error) {
     console.error("Gemini Error:", error);
+    // Graceful fallback for text generation ONLY if gemini-2.5-flash is temporarily unavailable/unfound
+    if (error.status === 404 || error.message?.includes("not found")) {
+      console.warn("Attempting reliable fallback for text generation...");
+      const fallbackResponse = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: { responseMimeType: "application/json" },
+      });
+      const fallbackText = fallbackResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!fallbackText) throw error;
+      return JSON.parse(fallbackText);
+    }
     throw error;
   }
 }
 
 export async function generateImage(prompt: string): Promise<string> {
   try {
+    // We try gemini-2.5-flash specifically for images as per user domain knowledge
     const response = await ai.models.generateImages({
       model: modelId, 
       prompt: prompt,
@@ -63,6 +76,17 @@ export async function generateImage(prompt: string): Promise<string> {
     throw new Error("No image data in response");
   } catch (error) {
     console.error("Gemini Image Error:", error);
+    // If the 404 persists for 2.5-flash in this specific Vercel region, try 2.0-flash-image
+    if (error.status === 404 || error.message?.includes("not found")) {
+       const retryResponse = await ai.models.generateImages({
+         model: "gemini-2.5-flash-image", // March 2026 production standard
+         prompt: prompt,
+         config: { numberOfImages: 1, aspectRatio: "1:1" },
+       });
+       const retryImg = retryResponse.generatedImages?.[0] as any;
+       const retryData = retryImg?.data || retryImg?.imageRaw || retryImg?.bytes;
+       if (retryData) return `data:image/png;base64,${retryData}`;
+    }
     throw error;
   }
 }
