@@ -1,15 +1,15 @@
-import { genAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  throw new Error("Missing GEMINI_API_KEY environment variable.");
+  throw new Error("Missing GEMINI_API_KEY environment variable. Please check your Vercel settings.");
 }
 
-// RESTORED: Standard initialization that works for the v1.x SDK
-const ai = genAI(apiKey);
+// Fixed initialization using the official GoogleGenAI class
+const ai = new GoogleGenAI({ apiKey });
 
-// Forcing to gemini-2.5-flash as per USER directive
+// Forcing all operations to gemini-2.5-flash as per USER directive
 export const modelId = "gemini-2.5-flash";
 
 export async function generateCreature(word1: string, word2: string, word3: string, lang: string) {
@@ -46,16 +46,16 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 export async function generateImage(prompt: string): Promise<string> {
   try {
     const response = await ai.models.generateImages({
-      model: "gemini-2.5-flash", 
+      model: modelId, 
       prompt: prompt,
       config: {
         numberOfImages: 1,
-        aspectRatio: "1:1", // Valid for Gemini 2.5 Flash as per March 2026 docs
+        aspectRatio: "1:1",
       },
     });
 
     const img = response.generatedImages?.[0] as any;
-    const imageData = img?.data || img?.imageRaw || img?.bytes;
+    const imageData = img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
     
     if (imageData) {
       return `data:image/png;base64,${imageData}`;
