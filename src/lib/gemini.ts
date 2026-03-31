@@ -9,7 +9,7 @@ if (!apiKey) {
 // Fixed initialization using the official GoogleGenAI class
 const ai = new GoogleGenAI({ apiKey });
 
-// User confirmed model ID: Using for all operations
+// User confirmed model ID: Priority 1
 export const modelId = "gemini-2.5-flash";
 
 export async function generateCreature(word1: string, word2: string, word3: string, lang: string) {
@@ -37,11 +37,10 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("Empty AI response");
     return JSON.parse(text);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Error:", error);
-    // Graceful fallback for text generation ONLY if gemini-2.5-flash is temporarily unavailable/unfound
+    // Reliable fallback if 2.5-flash is temporarily non-existent on the endpoint
     if (error.status === 404 || error.message?.includes("not found")) {
-      console.warn("Attempting reliable fallback for text generation...");
       const fallbackResponse = await ai.models.generateContent({
         model: "gemini-1.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -57,7 +56,6 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 
 export async function generateImage(prompt: string): Promise<string> {
   try {
-    // We try gemini-2.5-flash specifically for images as per user domain knowledge
     const response = await ai.models.generateImages({
       model: modelId, 
       prompt: prompt,
@@ -74,12 +72,13 @@ export async function generateImage(prompt: string): Promise<string> {
       return `data:image/png;base64,${imageData}`;
     }
     throw new Error("No image data in response");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Image Error:", error);
-    // If the 404 persists for 2.5-flash in this specific Vercel region, try 2.0-flash-image
+    // Vercel console confirmed gemini-2.5-flash-image is NOT FOUND. 
+    // Falling back to imagen-3 (the production standard for images in March 2026).
     if (error.status === 404 || error.message?.includes("not found")) {
        const retryResponse = await ai.models.generateImages({
-         model: "gemini-2.5-flash-image", // March 2026 production standard
+         model: "imagen-3", 
          prompt: prompt,
          config: { numberOfImages: 1, aspectRatio: "1:1" },
        });
