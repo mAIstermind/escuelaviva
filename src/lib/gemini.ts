@@ -29,9 +29,7 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     const response = await ai.models.generateContent({
       model: modelId,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        responseMimeType: "application/json",
-      },
+      config: { responseMimeType: "application/json" },
     });
 
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -55,15 +53,15 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 export async function generateImage(prompt: string): Promise<string> {
   const tryGenerateImage = async (targetModel: string) => {
     try {
-      const response = await ai.models.generateImages({
+      const resp = await ai.models.generateImages({
         model: targetModel,
         prompt: prompt,
         config: { numberOfImages: 1, aspectRatio: "1:1" }
       });
-      const img = response.generatedImages?.[0] as any;
+      const img = resp.generatedImages?.[0] as any;
       return img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
     } catch (e: any) {
-      console.warn(`[Probe] Model ${targetModel} is currently unavailable for images:`, e.message);
+      console.warn(`[Probe] Model ${targetModel} is unavailable for images:`, e.message);
       return null;
     }
   };
@@ -75,27 +73,33 @@ export async function generateImage(prompt: string): Promise<string> {
   // Tier 2: Search for available imagen models in the project
   try {
     console.log("[Probe] Performing dynamic image model discovery...");
-    const available = await ai.models.listModels();
+    // Corrected method name for SDK v1.29 to list available models
+    const available = await ai.models.list();
     const imageModels = available.models?.filter(m => 
-      m.supportedMethods?.includes("generateImages") || 
-      m.name?.includes("imagen")
+      m.supportedMethods?.some((meth: string) => meth.toLowerCase().includes("image")) || 
+      m.name?.toLowerCase().includes("imagen")
     );
     
     console.table(imageModels?.map(m => ({ name: m.name, methods: m.supportedMethods })));
 
     if (imageModels && imageModels.length > 0) {
-      const bestMatch = imageModels[0].name?.replace("models/", "") || "imagen-3";
-      console.info(`[Probe] Attempting discovery match: ${bestMatch}`);
-      data = await tryGenerateImage(bestMatch);
-      if (data) return `data:image/png;base64,${data}`;
+      const bestMatch = imageModels[0].name?.replace("models/", "");
+      if (bestMatch) {
+         console.info(`[Probe] Attempting discovery match: ${bestMatch}`);
+         data = await tryGenerateImage(bestMatch);
+         if (data) return `data:image/png;base64,${data}`;
+      }
     }
   } catch (e) {
     console.error("[Probe] Discovery failed entirely.", e);
   }
 
-  // Tier 3: Hardcoded Last Resort (March 2026 Production)
-  data = await tryGenerateImage("imagen-3-generate-001");
-  if (data) return `data:image/png;base64,${data}`;
+  // Tier 3: Hardcoded Candidates for different regions
+  const candidates = ["imagen-3-fast", "imagen-3", "gemini-2.0-flash", "imagen-3.0-generate-001"];
+  for (const candidate of candidates) {
+    data = await tryGenerateImage(candidate);
+    if (data) return `data:image/png;base64,${data}`;
+  }
 
   throw new Error("No available image models found for this API project.");
 }
