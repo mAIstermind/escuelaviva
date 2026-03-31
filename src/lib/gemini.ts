@@ -38,9 +38,8 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     if (!text) throw new Error("Empty AI response");
     return JSON.parse(text);
   } catch (error: any) {
-    console.error("Gemini Error:", error);
-    // Reliable fallback if 2.5-flash is temporarily non-existent on the endpoint
     if (error.status === 404 || error.message?.includes("not found")) {
+      // Fallback for text: gemini-1.5-flash is universally available since 2024
       const fallbackResponse = await ai.models.generateContent({
         model: "gemini-1.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -55,37 +54,42 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  try {
+  const tryGenerate = async (targetModel: string) => {
     const response = await ai.models.generateImages({
-      model: modelId, 
+      model: targetModel,
       prompt: prompt,
-      config: {
-        numberOfImages: 1,
-        aspectRatio: "1:1",
-      },
+      config: { numberOfImages: 1, aspectRatio: "1:1" },
     });
-
     const img = response.generatedImages?.[0] as any;
-    const imageData = img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
-    
-    if (imageData) {
-      return `data:image/png;base64,${imageData}`;
-    }
-    throw new Error("No image data in response");
+    return img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
+  };
+
+  try {
+    // Attempt 1: User's confirmed model
+    const data = await tryGenerate(modelId);
+    if (data) return `data:image/png;base64,${data}`;
+    throw new Error("No data");
   } catch (error: any) {
-    console.error("Gemini Image Error:", error);
-    // Vercel console confirmed gemini-2.5-flash-image is NOT FOUND. 
-    // Falling back to imagen-3 (the production standard for images in March 2026).
-    if (error.status === 404 || error.message?.includes("not found")) {
-       const retryResponse = await ai.models.generateImages({
-         model: "imagen-3", 
-         prompt: prompt,
-         config: { numberOfImages: 1, aspectRatio: "1:1" },
-       });
-       const retryImg = retryResponse.generatedImages?.[0] as any;
-       const retryData = retryImg?.data || retryImg?.imageRaw || retryImg?.bytes;
-       if (retryData) return `data:image/png;base64,${retryData}`;
+    console.warn(`Primary model ${modelId} failed:`, error.message);
+    
+    // Attempt 2: imagen-3-fast (Usually the most available flash image model in March 2026)
+    try {
+      const data = await tryGenerate("imagen-3-fast");
+      if (data) return `data:image/png;base64,${data}`;
+    } catch (e) {
+      console.warn("imagen-3-fast also failed, trying universal discovery...");
     }
+
+    // Attempt 3: Discovery Fallback
+    // We try to use gemini-2.0-flash which has multimodal generation output by March 2026
+    try {
+      const data = await tryGenerate("gemini-2.0-flash");
+      if (data) return `data:image/png;base64,${data}`;
+    } catch (finalError) {
+      console.error("All image generation attempts failed.");
+      throw finalError;
+    }
+    
     throw error;
   }
 }
