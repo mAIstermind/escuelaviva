@@ -61,7 +61,7 @@ export async function generateImage(prompt: string): Promise<string> {
       const img = resp.generatedImages?.[0] as any;
       return img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
     } catch (e: any) {
-      console.warn(`[Probe] Model ${targetModel} is unavailable for images:`, e.message);
+      console.warn(`[Probe] Model ${targetModel} is unavailable:`, e.message);
       return null;
     }
   };
@@ -70,18 +70,20 @@ export async function generateImage(prompt: string): Promise<string> {
   let data = await tryGenerateImage(modelId);
   if (data) return `data:image/png;base64,${data}`;
 
-  // Tier 2: Search for available imagen models in the project
+  // Tier 2: Dynamic Total Discovery
   try {
-    console.log("[Probe] Performing dynamic image model discovery...");
-    // Corrected method name for SDK v1.29 to list available models
+    console.log("[Probe] Performing FULL project model audit...");
     const available = await ai.models.list();
+    const allNames = available.models?.map(m => m.name) || [];
+    
+    // Print EVERYTHING to the console so we can see the hidden IDs
+    console.info("[Probe] ALL available models for this API key:", allNames);
+    
     const imageModels = available.models?.filter(m => 
       m.supportedMethods?.some((meth: string) => meth.toLowerCase().includes("image")) || 
       m.name?.toLowerCase().includes("imagen")
     );
     
-    console.table(imageModels?.map(m => ({ name: m.name, methods: m.supportedMethods })));
-
     if (imageModels && imageModels.length > 0) {
       const bestMatch = imageModels[0].name?.replace("models/", "");
       if (bestMatch) {
@@ -91,15 +93,15 @@ export async function generateImage(prompt: string): Promise<string> {
       }
     }
   } catch (e) {
-    console.error("[Probe] Discovery failed entirely.", e);
+    console.error("[Probe] Audit failed.", e);
   }
 
-  // Tier 3: Hardcoded Candidates for different regions
-  const candidates = ["imagen-3-fast", "imagen-3", "gemini-2.0-flash", "imagen-3.0-generate-001"];
+  // Tier 3: Known Common Cluster IDs
+  const candidates = ["imagen-3-fast", "imagen-3", "gemini-2.0-flash", "imagen-3.0-generate-001", "imagen-v3"];
   for (const candidate of candidates) {
     data = await tryGenerateImage(candidate);
     if (data) return `data:image/png;base64,${data}`;
   }
 
-  throw new Error("No available image models found for this API project.");
+  throw new Error("No image models found. Please check Google AI Studio settings for Imagen access.");
 }
