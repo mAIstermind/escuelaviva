@@ -76,19 +76,25 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
-    contents: [{ parts: [{ text: prompt }] }],
-    config: {
-      imageConfig: {
+  try {
+    const response = await ai.models.generateImages({
+      model: "gemini-2.5-flash-image",
+      prompt: prompt,
+      config: {
+        numberOfImages: 1,
         aspectRatio: "1:1",
       },
-    },
-  });
+    });
 
-  const imagePart = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
-  if (imagePart?.inlineData) {
-    return `data:image/png;base64,${imagePart.inlineData.data}`;
+    const img = response.generatedImages?.[0] as any;
+    const imageData = img?.data || img?.imageRaw || img?.bytes;
+    
+    if (imageData) {
+      return `data:image/png;base64,${imageData}`;
+    }
+    throw new Error("No image data in response");
+  } catch (error) {
+    console.error("Gemini Image Error:", error);
+    throw error;
   }
-  throw new Error("Failed to generate image");
 }
