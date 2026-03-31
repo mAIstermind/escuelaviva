@@ -1,4 +1,4 @@
-import * as GoogleAI from "@google/genai";
+import { genAI } from "@google/genai";
 
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -6,8 +6,8 @@ if (!apiKey) {
   throw new Error("Missing GEMINI_API_KEY environment variable.");
 }
 
-// Bypassing export name errors using a factory approach
-const ai = (GoogleAI as any).genAI ? (GoogleAI as any).genAI(apiKey) : (GoogleAI as any).createGenAI(apiKey);
+// RESTORED: Standard initialization that works for the v1.x SDK
+const ai = genAI(apiKey);
 
 // Forcing to gemini-2.5-flash as per USER directive
 export const modelId = "gemini-2.5-flash";
@@ -50,7 +50,7 @@ export async function generateImage(prompt: string): Promise<string> {
       prompt: prompt,
       config: {
         numberOfImages: 1,
-        aspectRatio: "1:1",
+        aspectRatio: "1:1", // Valid for Gemini 2.5 Flash as per March 2026 docs
       },
     });
 
