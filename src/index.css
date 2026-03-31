@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-comic: "Bangers", cursive;
+}
+
+:root {
+  --jungle: #0a5c36;
+  --ocean: #0077b6;
+  --fire: #e85d04;
+  --sun: #ffd166;
+  --light: #fffbf0;
+  --ink: #111111;
+}
+
+@layer base {
+  body {
+    @apply antialiased bg-[#c8e6c9] text-[#111111] font-sans;
+  }
+
+  h1, h2, h3 {
+    @apply font-comic uppercase tracking-wider;
+  }
+}
+
+@layer components {
+  .comic-border {
+    @apply border-[2.5px] border-[#111111];
+  }
+
+  .step-num {
+    @apply font-comic text-white bg-[#111111] w-8 h-8 rounded-full flex items-center justify-center shrink-0;
+  }
+
+  .word-chip {
+    @apply p-2 rounded-md text-center border-[1.5px] border-transparent font-extrabold transition-all cursor-pointer;
+  }
+
+  .chip-eco { @apply bg-[#d1fae5] text-[#0a5c36] border-[#6ee7b7] hover:border-[#0a5c36]; }
+  .chip-tech { @apply bg-[#dbeafe] text-[#0077b6] border-[#93c5fd] hover:border-[#0077b6]; }
+  .chip-team { @apply bg-[#fef3c7] text-[#92400e] border-[#fcd34d] hover:border-[#92400e]; }
+}
