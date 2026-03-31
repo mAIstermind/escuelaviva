@@ -39,7 +39,6 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     return JSON.parse(text);
   } catch (error: any) {
     if (error.status === 404 || error.message?.includes("not found")) {
-      // Fallback for text: gemini-1.5-flash is universally available since 2024
       const fallbackResponse = await ai.models.generateContent({
         model: "gemini-1.5-flash",
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -54,42 +53,49 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  const tryGenerate = async (targetModel: string) => {
-    const response = await ai.models.generateImages({
-      model: targetModel,
-      prompt: prompt,
-      config: { numberOfImages: 1, aspectRatio: "1:1" },
-    });
-    const img = response.generatedImages?.[0] as any;
-    return img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
+  const tryGenerateImage = async (targetModel: string) => {
+    try {
+      const response = await ai.models.generateImages({
+        model: targetModel,
+        prompt: prompt,
+        config: { numberOfImages: 1, aspectRatio: "1:1" }
+      });
+      const img = response.generatedImages?.[0] as any;
+      return img?.data || img?.imageRaw || img?.bytes || img?.image?.data;
+    } catch (e: any) {
+      console.warn(`[Probe] Model ${targetModel} is currently unavailable for images:`, e.message);
+      return null;
+    }
   };
 
-  try {
-    // Attempt 1: User's confirmed model
-    const data = await tryGenerate(modelId);
-    if (data) return `data:image/png;base64,${data}`;
-    throw new Error("No data");
-  } catch (error: any) {
-    console.warn(`Primary model ${modelId} failed:`, error.message);
-    
-    // Attempt 2: imagen-3-fast (Usually the most available flash image model in March 2026)
-    try {
-      const data = await tryGenerate("imagen-3-fast");
-      if (data) return `data:image/png;base64,${data}`;
-    } catch (e) {
-      console.warn("imagen-3-fast also failed, trying universal discovery...");
-    }
+  // Tier 1: User Preference
+  let data = await tryGenerateImage(modelId);
+  if (data) return `data:image/png;base64,${data}`;
 
-    // Attempt 3: Discovery Fallback
-    // We try to use gemini-2.0-flash which has multimodal generation output by March 2026
-    try {
-      const data = await tryGenerate("gemini-2.0-flash");
-      if (data) return `data:image/png;base64,${data}`;
-    } catch (finalError) {
-      console.error("All image generation attempts failed.");
-      throw finalError;
-    }
+  // Tier 2: Search for available imagen models in the project
+  try {
+    console.log("[Probe] Performing dynamic image model discovery...");
+    const available = await ai.models.listModels();
+    const imageModels = available.models?.filter(m => 
+      m.supportedMethods?.includes("generateImages") || 
+      m.name?.includes("imagen")
+    );
     
-    throw error;
+    console.table(imageModels?.map(m => ({ name: m.name, methods: m.supportedMethods })));
+
+    if (imageModels && imageModels.length > 0) {
+      const bestMatch = imageModels[0].name?.replace("models/", "") || "imagen-3";
+      console.info(`[Probe] Attempting discovery match: ${bestMatch}`);
+      data = await tryGenerateImage(bestMatch);
+      if (data) return `data:image/png;base64,${data}`;
+    }
+  } catch (e) {
+    console.error("[Probe] Discovery failed entirely.", e);
   }
+
+  // Tier 3: Hardcoded Last Resort (March 2026 Production)
+  data = await tryGenerateImage("imagen-3-generate-001");
+  if (data) return `data:image/png;base64,${data}`;
+
+  throw new Error("No available image models found for this API project.");
 }
