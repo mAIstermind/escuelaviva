@@ -33,7 +33,29 @@ export default function App() {
   const [lang, setLang] = useState<"es" | "en">("es");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -350,7 +372,35 @@ export default function App() {
           <div className="text-[#ffd166] font-comic text-sm">MIKE · PDC · 2025</div>
         </footer>
 
+
       </div>
+
+      {/* PWA Install Banner */}
+      <AnimatePresence>
+        {isInstallable && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 right-6 z-[100]"
+          >
+            <button
+              onClick={handleInstall}
+              className="bg-[#0a5c36] text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-2 border-white/20"
+            >
+              <Zap className="w-5 h-5 text-[#ffd166] fill-[#ffd166]" />
+              <div className="text-left">
+                <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 text-white/70">
+                  {lang === 'es' ? 'App Disponible' : 'App Available'}
+                </p>
+                <p className="text-sm font-bold leading-none">
+                  {lang === 'es' ? 'Instalar App' : 'Install App'}
+                </p>
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
