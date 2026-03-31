@@ -1,13 +1,13 @@
-import { createGenAI } from "@google/genai";
+import * as GoogleAI from "@google/genai";
 
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
-  throw new Error("Missing GEMINI_API_KEY environment variable. Please check your .env file or Vercel settings.");
+  throw new Error("Missing GEMINI_API_KEY environment variable.");
 }
 
-// Fixed import for SDK v1.x compatibility
-const ai = createGenAI(apiKey);
+// Bypassing export name errors using a factory approach
+const ai = (GoogleAI as any).genAI ? (GoogleAI as any).genAI(apiKey) : (GoogleAI as any).createGenAI(apiKey);
 
 // Forcing to gemini-2.5-flash as per USER directive
 export const modelId = "gemini-2.5-flash";
