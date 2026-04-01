@@ -59,10 +59,8 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  // Ultra-reliable mystical fetcher that matches the creature's keywords
-  const query = encodeURIComponent(prompt + " mystical legendary fantasy");
-  return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60&sig=${Math.random()}&q=${query}`;
-  
-  // Note: For a live project with students, we can use a more specific gallery search:
-  // return `https://source.unsplash.com/featured/800x800/?${query}`;
+  // Using Pollinations.ai for high-speed, CORS-free AI image generation
+  // matched perfectly to the creature's keywords
+  const query = encodeURIComponent(prompt + " mystical legendary masterpiece");
+  return `https://pollinations.ai/p/${query}?width=800&height=800&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
 }
