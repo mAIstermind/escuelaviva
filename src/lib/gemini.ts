@@ -6,11 +6,10 @@ if (!apiKey) {
   throw new Error("Missing GEMINI_API_KEY environment variable. Please check your Vercel settings.");
 }
 
-// Explicitly using the Stable Production v1 API for better reliability across regions
-// This bypasses the v1beta endpoint that has been returning 404s
+// Explicitly using the Stable Production v1 API
 const ai = new GoogleGenAI({ apiKey, apiVersion: "v1" });
 
-// 'gemini-1.5-flash' is the guaranteed stable ID on the v1 endpoint
+// Guaranteed stable ID on the v1 endpoint
 export const modelId = "gemini-1.5-flash";
 
 export interface AlchemistResponse {
@@ -47,7 +46,12 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     const response = await ai.models.generateContent({
       model: modelId,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: { responseMimeType: "application/json" },
+      // Corrected property name for the stable v1 endpoint
+      config: { 
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      } as any,
     });
 
     const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -55,14 +59,14 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     return JSON.parse(text);
   } catch (error: any) {
     console.error("Alchemist Core Error:", error);
-    // Final robust fallback for all regions
-    const backupId = "gemini-1.5-flash-latest";
+    // Ultimate fallback for regions where JSON mode is still restricted on v1
+    const backupId = "gemini-1.5-flash";
     const fallback = await ai.models.generateContent({
       model: backupId,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: { responseMimeType: "application/json" },
+      contents: [{ role: "user", parts: [{ text: prompt + " (Return raw JSON only, no markdown)" }] }],
     });
-    return JSON.parse(fallback.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+    const content = fallback.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    return JSON.parse(content.replace(/```json/g, "").replace(/```/g, "").trim());
   }
 }
 
