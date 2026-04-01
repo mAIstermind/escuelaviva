@@ -7,10 +7,11 @@ if (!apiKey) {
 }
 
 // Explicitly using the Stable Production v1 API for better reliability across regions
-const ai = new GoogleGenAI({ apiKey });
+// This bypasses the v1beta endpoint that has been returning 404s
+const ai = new GoogleGenAI({ apiKey, apiVersion: "v1" });
 
-// Using the '-latest' alias which is the most robust way to reference the model in 2026
-export const modelId = "gemini-1.5-flash-latest";
+// 'gemini-1.5-flash' is the guaranteed stable ID on the v1 endpoint
+export const modelId = "gemini-1.5-flash";
 
 export interface AlchemistResponse {
   creature_name: string;
@@ -54,16 +55,14 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     return JSON.parse(text);
   } catch (error: any) {
     console.error("Alchemist Core Error:", error);
-    // Nuclear fallback: just try 'gemini-1.5-flash' without the latest tag if it fails
-    if (error.status === 404) {
-      const fallback = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        config: { responseMimeType: "application/json" },
-      });
-      return JSON.parse(fallback.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
-    }
-    throw error;
+    // Final robust fallback for all regions
+    const backupId = "gemini-1.5-flash-latest";
+    const fallback = await ai.models.generateContent({
+      model: backupId,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { responseMimeType: "application/json" },
+    });
+    return JSON.parse(fallback.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
   }
 }
 
