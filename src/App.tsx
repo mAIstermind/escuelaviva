@@ -262,7 +262,7 @@ export default function App() {
         </div>
 
         <footer className="p-4 bg-[#111] text-center">
-           <p className="text-[#ffd166] text-[8px] font-bold tracking-[0.3em] uppercase">PDC · ESCUELA VIVA · 2025</p>
+           <p className="text-[#ffd166] text-[8px] font-bold tracking-[0.3em] uppercase">PDC · ESCUELA VIVA · 2026</p>
         </footer>
 
       </div>
