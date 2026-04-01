@@ -252,46 +252,50 @@ export default function App() {
                       <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
                     </div>
                     
-                    <div className="aspect-square relative overflow-hidden bg-zinc-100 flex items-center justify-center border-b-2 border-[#111]">
-                      {msg.imageUrl ? (
-                        <div className="relative w-full h-full">
-                          {!imageLoading[msg.timestamp] && !imageFailed[msg.timestamp] && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 z-20">
-                              <Loader2 className="animate-spin w-12 h-12 text-emerald-600 mb-2" />
-                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Summoning Visual...</p>
-                            </div>
-                          )}
-                          {imageFailed[msg.timestamp] ? (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 z-20">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">⚠️ {lang === 'es' ? 'Imagen no disponible' : 'Image unavailable'}</p>
-                            </div>
-                          ) : (
-                            <img 
-                              src={msg.imageUrl} 
-                              alt="Creature"
-                              className={cn("w-full h-full object-cover transition-opacity duration-1000", imageLoading[msg.timestamp] ? "opacity-100" : "opacity-0")}
-                              onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
-                              onError={(e) => {
-                                const img = e.currentTarget;
-                                if (!img.dataset.retried) {
-                                  img.dataset.retried = "true";
-                                  img.src = `https://picsum.photos/seed/${msg.timestamp}/800/800`; // placeholder fallback
-                                } else {
-                                  setImageFailed(prev => ({...prev, [msg.timestamp]: true}));
-                                }
+                    {/* Advanced Promptscroll */}
+                    <div className="px-5 mb-6">
+                      <div className="bg-[#111] p-6 rounded-xl border-2 border-[#ffd166] shadow-[8px_8px_0px_0px_rgba(232,93,4,1)] relative group overflow-hidden">
+                         <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                            <Sparkles className="text-[#ffd166] w-8 h-8" />
+                         </div>
+                         <p className="text-[10px] font-black uppercase text-[#ffd166] mb-3 tracking-[0.3em]">{lang === 'es' ? 'PERGAMINO DE INVOCACIÓN:' : 'SUMMONING SCROLL:'}</p>
+                         <div className="text-white font-medium text-sm leading-relaxed italic bg-zinc-800/50 p-4 rounded-lg border border-white/10 select-all">
+                            {manualPrompt}
+                         </div>
+                         <div className="mt-4 flex gap-3">
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(manualPrompt);
+                                alert("Prompt Copied!");
                               }}
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <div className="relative z-10 flex flex-col items-center gap-2 text-zinc-300 bg-white/10 p-6 rounded-xl backdrop-blur-sm text-center">
-                          <Loader2 className="animate-spin w-10 h-10 mb-2" />
-                          <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                             {lang === 'es' ? 'ALQUIMIA EN PROCESO...' : 'ALCHEMY IN PROGRESS...'}
-                          </p>
-                        </div>
-                      )}
+                              className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all flex items-center gap-2"
+                            >
+                               <RefreshCw className="w-3 h-3" /> {lang === 'es' ? 'COPIAR PROMPT' : 'COPY PROMPT'}
+                            </button>
+                         </div>
+                      </div>
                     </div>
+
+                    {/* Technical Metadata / JSON Section */}
+                    {msg.data?.metadata && (
+                      <div className="mx-5 mb-6 space-y-3">
+                         <div className="flex justify-between items-center bg-zinc-100 p-2 border-2 border-[#111] rounded-lg">
+                           <p className="text-[10px] font-black text-[#111] uppercase tracking-widest pl-2">TECHNICAL_DATA.JSON</p>
+                           <button 
+                             onClick={() => {
+                               navigator.clipboard.writeText(JSON.stringify(msg.data, null, 2));
+                               alert("JSON Data Copied!");
+                             }}
+                             className="text-[9px] bg-[#111] text-white px-4 py-1.5 rounded-md font-black uppercase tracking-tighter hover:bg-zinc-800 transition-all"
+                           >
+                              COPY JSON
+                           </button>
+                         </div>
+                         <pre className="p-4 bg-zinc-900 rounded-lg text-[10px] text-emerald-400 font-mono overflow-x-hidden whitespace-pre-wrap border-2 border-emerald-900/30">
+                            {JSON.stringify(msg.data.metadata, null, 2)}
+                         </pre>
+                      </div>
+                    )}
 
                     <div className="p-5 space-y-4">
                       <div className="space-y-2">
