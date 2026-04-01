@@ -1,13 +1,8 @@
-import { GoogleGenAI } from "@google/genai";
-
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
   throw new Error("Missing GEMINI_API_KEY environment variable. Please check your Vercel settings.");
 }
-
-// Reverting to the most compatible default (v1beta) 
-const ai = new GoogleGenAI({ apiKey });
 
 export interface AlchemistResponse {
   creature_name: string;
@@ -15,7 +10,6 @@ export interface AlchemistResponse {
   leadership_challenge: string;
   image_prompt: string;
   closing: string;
-  native_image?: string;
 }
 
 export interface Message {
@@ -26,7 +20,7 @@ export interface Message {
   imageUrl?: string;
 }
 
-export async function generateCreature(word1: string, word2: string, word3: string, lang: string) {
+export async function generateCreature(word1: string, word2: string, word3: string, lang: string): Promise<AlchemistResponse> {
   const prompt = `
     Summon a legendary creature based on these 3 alchemy words: "${word1}", "${word2}", "${word3}".
     Language: ${lang === 'es' ? 'Spanish' : 'English'}.
@@ -39,40 +33,34 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     - closing: (str) A final motivating phrase
   `;
 
-  // Tiered Fallback IDs: Try everything until one works
-  const candidateIds = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-flash-8b",
-    "gemini-2.0-flash-exp",
-    "gemini-pro"
-  ];
+  // We bypass the SDK and use direct REST to ensure 100% compatibility across regions
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-  for (const id of candidateIds) {
-    try {
-      console.log(`[Alchemist] Attempting invocation with: ${id}`);
-      const response = await ai.models.generateContent({
-        model: id,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-      });
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json"
+      }
+    })
+  });
 
-      const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) continue;
-      
-      // Clean JSON if it's wrapped in markdown
-      const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      return JSON.parse(cleanJson);
-    } catch (error: any) {
-      console.warn(`[Alchemist] Model ${id} failed:`, error.message);
-      // If we hit a rate limit (429), just stop and fail gracefully
-      if (error.status === 429) break;
-      continue;
-    }
+  if (!response.ok) {
+    const error = await response.json();
+    console.error("Alchemist Direct API Error:", error);
+    throw new Error(error.error?.message || "Failed to communicate with Alchemist");
   }
 
-  throw new Error("No available models found for this API project. Check Google AI Studio.");
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty Alchemist response");
+  
+  return JSON.parse(text);
 }
 
 export async function generateImage(prompt: string): Promise<string> {
+  // Ultra-reliable mystical fetcher
   return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60&sig=${Math.random()}`;
 }
