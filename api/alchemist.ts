@@ -27,8 +27,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       `;
 
-      // STRICT LOCK: GEMINI 2.5 FLASH
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+      // STRICT LOCK: GEMINI 2.5 FLASH - preview-04-17 is current live version
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -42,9 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (response.status === 429) {
         attempts++;
         if (attempts < maxAttempts) {
-          // MASTERFUL PATIENCE: 65-second hold to satisfy Google's extreme penalty (measured 51s)
           console.log(`Deep rate limit hit. Waiting 65s for attempt ${attempts}...`);
-          await new Promise(resolve => setTimeout(resolve, 65000)); 
+          await new Promise(resolve => setTimeout(resolve, 65000));
           continue;
         }
       }
@@ -57,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const result: any = await response.json();
       const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error("Empty AI response");
-      
+
       const jsonResult = JSON.parse(text);
       const imageQuery = encodeURIComponent(jsonResult.image_prompt + " cinematic masterpiece mystical");
       const imageUrl = `https://pollinations.ai/p/${imageQuery}?width=800&height=800&nologo=true`;
