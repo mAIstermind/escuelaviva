@@ -84,18 +84,22 @@ export default function App() {
         text: "",
         timestamp: Date.now(),
         data: result,
+        imageUrl: result.native_image // Use native image if available instantly
       };
       setMessages((prev) => [...prev, aiMessage]);
 
-      const imageUrl = await generateImage(result.image_prompt);
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        const last = newMessages[newMessages.length - 1];
-        if (last.role === "model") {
-          last.imageUrl = imageUrl;
-        }
-        return newMessages;
-      });
+      // Only pull a separate image if the native one failed or is missing
+      if (!result.native_image) {
+        const imageUrl = await generateImage(result.image_prompt);
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const last = newMessages[newMessages.length - 1];
+          if (last.role === "model") {
+            last.imageUrl = imageUrl;
+          }
+          return newMessages;
+        });
+      }
 
     } catch (error) {
       console.error("Alchemist error:", error);
