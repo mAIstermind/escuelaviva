@@ -147,32 +147,60 @@ export default function App() {
           </div>
 
           {/* Word Grid */}
-          <section className="space-y-4">
-            <h2 className="text-lg font-black uppercase tracking-wider text-[#111] border-l-4 border-emerald-600 pl-3">
-              {lang === "es" ? "1. TUS PALABRAS CLAVE" : "1. YOUR KEY WORDS"}
+          <section className="space-y-6">
+            <h2 className="text-lg font-black uppercase tracking-wider text-[#111] border-l-4 border-emerald-600 pl-3 flex justify-between items-center">
+              <span>{lang === "es" ? "1. TUS PALABRAS CLAVE" : "1. YOUR KEY WORDS"}</span>
+              <RefreshCw onClick={() => setWords({word1: "", word2: "", word3: ""})} className="w-4 h-4 cursor-pointer hover:rotate-180 transition-transform text-zinc-400" />
             </h2>
-            <div className="grid grid-cols-3 gap-3">
-              {(['eco', 'tech', 'team'] as const).map((cat) => (
-                <div key={cat} className="space-y-2">
-                  <div className="text-[10px] font-black text-center py-1 bg-[#111] text-white rounded uppercase tracking-tighter">
+            
+            <div className="grid grid-cols-3 gap-4">
+              {(['eco', 'tech', 'team'] as const).map((cat, idx) => (
+                <div key={cat} className="space-y-3">
+                  <div className="text-[10px] font-black text-center py-1.5 bg-[#111] text-white rounded uppercase tracking-tighter">
                     {cat === 'eco' ? (lang === 'es' ? 'TIERRA' : 'EARTH') : cat === 'tech' ? (lang === 'es' ? 'FUTURO' : 'FUTURE') : (lang === 'es' ? 'EQUIPO' : 'TEAM')}
                   </div>
-                  {WORD_OPTIONS[cat].map((opt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setWords(prev => ({ ...prev, [`word${cat === 'eco' ? 1 : cat === 'tech' ? 2 : 3}`]: opt[lang] }))}
-                      className={cn(
-                        "w-full p-2 text-[11px] font-bold border-2 border-[#111] rounded transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none bg-white",
-                        words[`word${cat === 'eco' ? 1 : cat === 'tech' ? 2 : 3}`] === opt[lang] && "bg-emerald-100 ring-2 ring-emerald-600"
-                      )}
-                    >
-                      {opt[lang]}
-                    </button>
-                  ))}
+                  
+                  {/* Custom Input */}
+                  <input 
+                    type="text"
+                    placeholder={lang === 'es' ? "Escribe..." : "Type..."}
+                    value={words[`word${idx + 1}` as keyof typeof words]}
+                    onChange={(e) => setWords(prev => ({ ...prev, [`word${idx+1}`]: e.target.value }))}
+                    className="w-full p-2 text-[11px] font-bold border-2 border-[#111] rounded shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:bg-emerald-50 focus:outline-none placeholder:text-zinc-300"
+                  />
+
+                  <div className="space-y-1.5">
+                    {WORD_OPTIONS[cat].map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setWords(prev => ({ ...prev, [`word${idx + 1}`]: opt[lang] }))}
+                        className={cn(
+                          "w-full p-2 text-[10px] font-bold border-2 border-[#111] rounded transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none bg-white",
+                          words[`word${idx + 1}` as keyof typeof words] === opt[lang] && "bg-emerald-100 ring-2 ring-emerald-600"
+                        )}
+                      >
+                        {opt[lang]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
           </section>
+
+          {/* Selection Tray */}
+          <div className="bg-emerald-900/5 border-2 border-dashed border-emerald-600/30 p-4 rounded-xl flex flex-col items-center gap-2">
+             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/50">
+                {lang === 'es' ? 'PALABRAS EN EL CALDERO:' : 'WORDS IN THE CAULDRON:'}
+             </p>
+             <div className="flex gap-2 flex-wrap justify-center">
+                {[words.word1, words.word2, words.word3].map((w, i) => (
+                   <div key={i} className={cn("px-3 py-1 bg-white border-2 border-[#111] rounded-full text-xs font-black italic shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]", !w && "opacity-20")}>
+                      {w || "???"}
+                   </div>
+                ))}
+             </div>
+          </div>
 
           {/* Summon Button */}
           <button
