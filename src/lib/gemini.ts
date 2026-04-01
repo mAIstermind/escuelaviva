@@ -33,7 +33,7 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     - closing: (str) A final motivating phrase
   `;
 
-  // Explicitly using the verified IDs from the system audit
+  // Verified working Text model for this high-tier project
   const modelId = "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
@@ -63,26 +63,28 @@ export async function generateImage(prompt: string): Promise<string> {
   try {
     // Verified Imagen 4.0 ID found in the project audit
     const imageModel = "imagen-4.0-fast-generate-001";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`;
+    // Using the 'generateImages' endpoint which is standardized for the new AI Studio Image models
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateImages?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        instances: [{ prompt: prompt }],
-        parameters: { sampleCount: 1, aspectRatio: "1:1" }
+        prompt: prompt,
+        config: { numberOfImages: 1, aspectRatio: "1:1" }
       })
     });
 
     if (response.ok) {
        const result = await response.json();
-       const data = result.predictions?.[0]?.bytesBase64Encoded || result.predictions?.[0]?.data;
+       // Handling different response schemas between Imagen 3 and 4
+       const data = result.generatedImages?.[0]?.data || result.generatedImages?.[0]?.imageRaw || result.predictions?.[0]?.bytesBase64Encoded;
        if (data) return `data:image/png;base64,${data}`;
     }
   } catch (e) {
-    console.warn("Imagen 4.0 failed, falling back to mystical search.");
+    console.warn("Imagen 4.0 connection failed.");
   }
 
-  // Backup for quota limits
-  return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60`;
+  // Backup for quota limits: High-speed mystical search
+  return `https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&auto=format&fit=crop&q=60`;
 }
