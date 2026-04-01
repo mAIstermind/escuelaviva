@@ -58,8 +58,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!text) throw new Error("Empty AI response");
 
       const jsonResult = JSON.parse(text);
-      const imageQuery = encodeURIComponent(jsonResult.image_prompt + " cinematic masterpiece mystical");
-      const imageUrl = `https://pollinations.ai/p/${imageQuery}?width=800&height=800&nologo=true`;
+      const imageQuery = encodeURIComponent(jsonResult.image_prompt + " cinematic masterpiece mystical creature portrait");
+      const imageUrl = `https://image.pollinations.ai/prompt/${imageQuery}?width=800&height=800&nologo=true&seed=${Date.now()}`;
 
       return res.status(200).json({ ...jsonResult, imageUrl });
 

@@ -225,7 +225,15 @@ export default function App() {
                               alt="Creature"
                               className={cn("w-full h-full object-cover transition-opacity duration-1000", imageLoading[msg.timestamp] ? "opacity-100" : "opacity-0")}
                               onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
-                              onError={() => setImageFailed(prev => ({...prev, [msg.timestamp]: true}))}
+                              onError={(e) => {
+                                const img = e.currentTarget;
+                                if (!img.dataset.retried) {
+                                  img.dataset.retried = "true";
+                                  img.src = `https://picsum.photos/seed/${msg.timestamp}/800/800`; // placeholder fallback
+                                } else {
+                                  setImageFailed(prev => ({...prev, [msg.timestamp]: true}));
+                                }
+                              }}
                             />
                           )}
                         </div>
