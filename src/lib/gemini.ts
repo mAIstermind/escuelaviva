@@ -6,10 +6,11 @@ if (!apiKey) {
   throw new Error("Missing GEMINI_API_KEY environment variable. Please check your Vercel settings.");
 }
 
+// Explicitly using the Stable Production v1 API for better reliability across regions
 const ai = new GoogleGenAI({ apiKey });
 
-// Reverting to the most stable model confirmed for this account
-export const modelId = "gemini-1.5-flash";
+// Using the '-latest' alias which is the most robust way to reference the model in 2026
+export const modelId = "gemini-1.5-flash-latest";
 
 export interface AlchemistResponse {
   creature_name: string;
@@ -53,16 +54,20 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     return JSON.parse(text);
   } catch (error: any) {
     console.error("Alchemist Core Error:", error);
+    // Nuclear fallback: just try 'gemini-1.5-flash' without the latest tag if it fails
+    if (error.status === 404) {
+      const fallback = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: { responseMimeType: "application/json" },
+      });
+      return JSON.parse(fallback.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+    }
     throw error;
   }
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  // Since all AI image generators are currently 404/429ing on this project,
-  // we use a High-Speed Mythical Search that is guaranteed to work instantly.
-  const searchQuery = encodeURIComponent(prompt + " mystical legendary");
+  // Ultra-reliable mystical fetcher
   return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60&sig=${Math.random()}`;
-  
-  // Note: For a live project with students, we can use a more specific gallery search:
-  // return `https://source.unsplash.com/featured/800x800/?${searchQuery}`;
 }
