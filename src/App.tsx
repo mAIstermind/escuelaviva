@@ -36,6 +36,7 @@ export default function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
   const [imageFailed, setImageFailed] = useState<Record<number, boolean>>({});
+  const [manualPrompt, setManualPrompt] = useState<string>("");
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,6 +45,20 @@ export default function App() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleRegenerate = async (timestamp: number, prompt: string) => {
+    setImageLoading(prev => ({ ...prev, [timestamp]: false }));
+    setImageFailed(prev => ({ ...prev, [timestamp]: false }));
+    
+    setMessages(prev => {
+      const newMessages = [...prev];
+      const idx = newMessages.findIndex(m => m.timestamp === timestamp);
+      if (idx !== -1) {
+        newMessages[idx].imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&model=flux&nologo=true&seed=${Date.now()}`;
+      }
+      return newMessages;
+    });
+  };
 
   const handleAlchemize = async () => {
     if (!words.word1 || !words.word2 || !words.word3 || isLoading) return;
@@ -59,6 +74,9 @@ export default function App() {
     try {
       const result = await generateCreature(words.word1, words.word2, words.word3, lang);
       
+      const fullPrompt = `${result.image_prompt}. Style: ${result.metadata?.style}, Palette: ${result.metadata?.palette}, Details: ${result.metadata?.details}, Composition: ${result.metadata?.composition}`;
+      setManualPrompt(fullPrompt);
+
       const aiMessage: Message = {
         role: "model",
         text: "",
@@ -285,6 +303,26 @@ export default function App() {
                            {msg.data?.vision}
                         </p>
                       </div>
+                    </div>
+
+                    {/* Manual Prompt Editor & Tweak Area */}
+                    <div className="px-5 mb-4 space-y-3">
+                      <div className="flex justify-between items-end border-b border-zinc-200 pb-2">
+                        <p className="text-[10px] font-black uppercase text-emerald-800">{lang === 'es' ? '✏️ AJUSTAR ALQUIMIA VISUAL:' : '✏️ TWEAK VISUAL ALCHEMY:'}</p>
+                        <button 
+                          onClick={() => handleRegenerate(msg.timestamp, manualPrompt)}
+                          className="flex items-center gap-1.5 bg-[#e85d04] text-white px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-md hover:scale-105 transition-all"
+                        >
+                           <RefreshCw className="w-3 h-3" />
+                           {lang === 'es' ? 'REGENERAR IMAGEN' : 'REGENERATE IMAGE'}
+                        </button>
+                      </div>
+                      <textarea 
+                        value={manualPrompt}
+                        onChange={(e) => setManualPrompt(e.target.value)}
+                        className="w-full p-3 bg-zinc-50 border-2 border-[#111] rounded-lg text-xs font-medium text-zinc-600 focus:ring-2 focus:ring-emerald-500 focus:outline-none min-h-[80px]"
+                        placeholder={lang === 'es' ? "Edita el prompt aquí..." : "Edit the prompt here..."}
+                      />
                     </div>
 
                     {/* Prompt Metadata Section */}
