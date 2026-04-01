@@ -184,56 +184,65 @@ export default function App() {
 
           {/* Results Area */}
           <AnimatePresence mode="popLayout">
-            {messages.filter(m => m.role === "model").reverse().map((msg) => (
+            {messages.slice().reverse().map((msg) => (
               <motion.div
                 key={msg.timestamp}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6"
               >
-                <div className="border-[3px] border-[#111] rounded-xl overflow-hidden bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                  <div className="bg-[#111] p-3 flex justify-between items-center">
-                    <h3 className="text-[#ffd166] text-sm font-black uppercase italic tracking-widest">{msg.data?.creature_name}</h3>
-                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                {msg.role === "user" ? (
+                  <div className="flex justify-start">
+                    <div className="bg-emerald-100 border-2 border-[#111] p-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-[80%]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800 mb-1">{lang === 'es' ? 'PALABRAS ELEGIDAS:' : 'CHOSEN WORDS:'}</p>
+                      <p className="text-lg font-black italic">"{msg.text}"</p>
+                    </div>
                   </div>
-                  
-                  <div className="aspect-square relative overflow-hidden bg-zinc-100 flex items-center justify-center border-b-2 border-[#111]">
-                    {msg.imageUrl ? (
-                      <div className="relative w-full h-full">
-                        {!imageLoading[msg.timestamp] && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 z-20">
-                            <Loader2 className="animate-spin w-12 h-12 text-emerald-600 mb-2" />
-                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Summoning Visual...</p>
-                          </div>
-                        )}
-                        <img 
-                          src={msg.imageUrl} 
-                          alt="Creature"
-                          className={cn("w-full h-full object-cover transition-opacity duration-1000", imageLoading[msg.timestamp] ? "opacity-100" : "opacity-0")}
-                          onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
-                        />
+                ) : (
+                  <div className="border-[3px] border-[#111] rounded-xl overflow-hidden bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="bg-[#111] p-3 flex justify-between items-center">
+                      <h3 className="text-[#ffd166] text-sm font-black uppercase italic tracking-widest">{msg.data?.creature_name}</h3>
+                      <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                    </div>
+                    
+                    <div className="aspect-square relative overflow-hidden bg-zinc-100 flex items-center justify-center border-b-2 border-[#111]">
+                      {msg.imageUrl ? (
+                        <div className="relative w-full h-full">
+                          {!imageLoading[msg.timestamp] && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 z-20">
+                              <Loader2 className="animate-spin w-12 h-12 text-emerald-600 mb-2" />
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Summoning Visual...</p>
+                            </div>
+                          )}
+                          <img 
+                            src={msg.imageUrl} 
+                            alt="Creature"
+                            className={cn("w-full h-full object-cover transition-opacity duration-1000", imageLoading[msg.timestamp] ? "opacity-100" : "opacity-0")}
+                            onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
+                          />
+                        </div>
+                      ) : (
+                        <Loader2 className="animate-spin w-12 h-12 text-zinc-300" />
+                      )}
+                    </div>
+
+                    <div className="p-5 space-y-4">
+                      <div className="space-y-2">
+                         <p className="text-[10px] font-black text-emerald-700 underline tracking-widest">{lang === 'es' ? 'RETO DEL LÍDER:' : 'LEADER CHALLENGE:'}</p>
+                         <p className="text-sm font-bold leading-relaxed italic">"{msg.data?.leadership_challenge}"</p>
                       </div>
-                    ) : (
-                      <Loader2 className="animate-spin w-12 h-12 text-zinc-300" />
-                    )}
-                  </div>
-
-                  <div className="p-5 space-y-4">
-                    <div className="space-y-2">
-                       <p className="text-[10px] font-black text-emerald-700 underline tracking-widest">{lang === 'es' ? 'RETO DEL LÍDER:' : 'LEADER CHALLENGE:'}</p>
-                       <p className="text-sm font-bold leading-relaxed italic">"{msg.data?.leadership_challenge}"</p>
+                      <div className="bg-emerald-50 p-4 border-2 border-emerald-100 rounded-lg">
+                        <p className="text-sm font-medium text-emerald-900 leading-relaxed">
+                           {msg.data?.vision}
+                        </p>
+                      </div>
                     </div>
-                    <div className="bg-emerald-50 p-4 border-2 border-emerald-100 rounded-lg">
-                      <p className="text-sm font-medium text-emerald-900 leading-relaxed">
-                         {msg.data?.vision}
-                      </p>
+
+                    <div className="p-3 bg-[#fdf2f2] border-t-2 border-[#111] text-center italic text-[#e85d04] font-bold text-xs">
+                      {msg.data?.closing}
                     </div>
                   </div>
-
-                  <div className="p-3 bg-[#fdf2f2] border-t-2 border-[#111] text-center italic text-[#e85d04] font-bold text-xs">
-                    {msg.data?.closing}
-                  </div>
-                </div>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
