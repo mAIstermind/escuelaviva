@@ -8,8 +8,8 @@ import {
   ExternalLink 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { generateCreature, Message } from "@/lib/gemini";
+import { cn } from "./lib/utils";
+import { generateCreature, Message } from "./lib/gemini";
 
 const WORD_OPTIONS = {
   eco: [
@@ -257,18 +257,18 @@ export default function App() {
                     {msg.data?.metadata && (
                       <div className="mx-5 mb-6 space-y-3">
                          <div className="flex justify-between items-center bg-zinc-100 p-2 border-2 border-[#111] rounded-lg">
-                           <p className="text-[10px] font-black text-[#111] uppercase tracking-widest pl-2">TECHNICAL_DATA.JSON</p>
+                           <p className="text-[10px] font-black text-[#111] uppercase tracking-widest pl-2">VISUAL_DNA.JSON</p>
                            <button 
                              onClick={() => {
-                               navigator.clipboard.writeText(JSON.stringify(msg.data, null, 2));
-                               alert("JSON Data Copied!");
+                               navigator.clipboard.writeText(JSON.stringify(msg.data?.metadata, null, 2));
+                               alert("Visual DNA Copied!");
                              }}
-                             className="text-[9px] bg-[#111] text-white px-4 py-1.5 rounded-md font-black uppercase tracking-tighter hover:bg-zinc-800 transition-all"
+                             className="text-[9px] bg-[#111] text-white px-4 py-1.5 rounded-md font-black uppercase tracking-tighter hover:bg-zinc-800 transition-all font-black"
                            >
-                              COPY JSON
+                              COPY DNA
                            </button>
                          </div>
-                         <pre className="p-4 bg-zinc-900 rounded-lg text-[9px] text-emerald-400 font-mono overflow-x-hidden whitespace-pre-wrap border-2 border-emerald-900/30">
+                         <pre className="p-4 bg-zinc-900 rounded-lg text-[10px] text-emerald-400 font-mono overflow-x-hidden whitespace-pre-wrap border-2 border-emerald-900/30">
                             {JSON.stringify(msg.data.metadata, null, 2)}
                          </pre>
                       </div>
