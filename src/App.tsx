@@ -35,6 +35,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
+  const [imageFailed, setImageFailed] = useState<Record<number, boolean>>({});
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -208,24 +209,31 @@ export default function App() {
                     <div className="aspect-square relative overflow-hidden bg-zinc-100 flex items-center justify-center border-b-2 border-[#111]">
                       {msg.imageUrl ? (
                         <div className="relative w-full h-full">
-                          {!imageLoading[msg.timestamp] && (
+                          {!imageLoading[msg.timestamp] && !imageFailed[msg.timestamp] && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 z-20">
                               <Loader2 className="animate-spin w-12 h-12 text-emerald-600 mb-2" />
                               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Summoning Visual...</p>
                             </div>
                           )}
-                          <img 
-                            src={msg.imageUrl} 
-                            alt="Creature"
-                            className={cn("w-full h-full object-cover transition-opacity duration-1000", imageLoading[msg.timestamp] ? "opacity-100" : "opacity-0")}
-                            onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
-                          />
+                          {imageFailed[msg.timestamp] ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-50 z-20">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">⚠️ {lang === 'es' ? 'Imagen no disponible' : 'Image unavailable'}</p>
+                            </div>
+                          ) : (
+                            <img 
+                              src={msg.imageUrl} 
+                              alt="Creature"
+                              className={cn("w-full h-full object-cover transition-opacity duration-1000", imageLoading[msg.timestamp] ? "opacity-100" : "opacity-0")}
+                              onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
+                              onError={() => setImageFailed(prev => ({...prev, [msg.timestamp]: true}))}
+                            />
+                          )}
                         </div>
                       ) : (
                         <div className="relative z-10 flex flex-col items-center gap-2 text-zinc-300 bg-white/10 p-6 rounded-xl backdrop-blur-sm text-center">
                           <Loader2 className="animate-spin w-10 h-10 mb-2" />
                           <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                             {lang === 'es' ? 'ALQUIMIA EN PROCESO (PODRÍA TARDAR 60S SI EL TIER ESTÁ LLENO)' : 'ALCHEMY IN PROGRESS (MAY TAKE 60S IF TIER IS FULL)'}
+                             {lang === 'es' ? 'ALQUIMIA EN PROCESO...' : 'ALCHEMY IN PROGRESS...'}
                           </p>
                         </div>
                       )}
