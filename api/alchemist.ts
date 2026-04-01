@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   while (attempts < maxAttempts) {
     try {
       const prompt = `
-        Summon a legendary leadership creature based on: "${word1}", "${word2}", "${word3}".
+        Summon a unique legendary leadership creature based ONLY on: "${word1}", "${word2}", "${word3}".
         Language: ${lang === 'es' ? 'Spanish' : 'English'}.
         
         Return a JSON object:
@@ -42,8 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (response.status === 429) {
         attempts++;
         if (attempts < maxAttempts) {
-          // MAXIMUM PERSISTENCE: 20-second hold to satisfy Google's mandatory wait (measured 14.6s)
-          await new Promise(resolve => setTimeout(resolve, 20000)); 
+          // MASTERFUL PATIENCE: 65-second hold to satisfy Google's extreme penalty (measured 51s)
+          console.log(`Deep rate limit hit. Waiting 65s for attempt ${attempts}...`);
+          await new Promise(resolve => setTimeout(resolve, 65000)); 
           continue;
         }
       }
@@ -68,8 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
       }
       attempts++;
-      // Secondary hold for other errors
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
   }
 }

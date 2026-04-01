@@ -222,7 +222,12 @@ export default function App() {
                           />
                         </div>
                       ) : (
-                        <Loader2 className="animate-spin w-12 h-12 text-zinc-300" />
+                        <div className="relative z-10 flex flex-col items-center gap-2 text-zinc-300 bg-white/10 p-6 rounded-xl backdrop-blur-sm text-center">
+                          <Loader2 className="animate-spin w-10 h-10 mb-2" />
+                          <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
+                             {lang === 'es' ? 'ALQUIMIA EN PROCESO (PODRÍA TARDAR 60S SI EL TIER ESTÁ LLENO)' : 'ALCHEMY IN PROGRESS (MAY TAKE 60S IF TIER IS FULL)'}
+                          </p>
+                        </div>
                       )}
                     </div>
 
