@@ -312,6 +312,10 @@ export default function App() {
                                 alt={msg.data?.creature_name}
                                 className={`w-full h-auto object-cover transform transition-all duration-700 group-hover:scale-105 ${!imageLoading[msg.timestamp] ? 'opacity-0' : 'opacity-100'}`}
                                 onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
+                                onError={(e) => {
+                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&auto=format&fit=crop&q=60';
+                                  setImageLoading(prev => ({...prev, [msg.timestamp]: true}));
+                                }}
                               />
                             </div>
                           ) : (
