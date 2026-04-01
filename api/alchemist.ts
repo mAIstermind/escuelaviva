@@ -14,20 +14,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   while (attempts < maxAttempts) {
     try {
       const prompt = `
-        Summon a unique legendary leadership creature based ONLY on: "${word1}", "${word2}", "${word3}".
+        Summon a unique creature based on: "${word1}", "${word2}", "${word3}".
         Language: ${lang === 'es' ? 'Spanish' : 'English'}.
         
         Return a JSON object:
         {
           "creature_name": "Unique Name",
-          "vision": "1 poetic description",
-          "leadership_challenge": "2 sentences on leadership for youth",
-          "image_prompt": "cinematic hyper-realistic 1:1 portrait of this creature",
+          "vision": "1-sentence poetic description",
+          "leadership_challenge": "2 short sentences on leadership for youth",
+          "image_prompt": "highly descriptive cinematic image prompt based on ${word1}, ${word2}, ${word3}",
+          "metadata": {
+            "style": "Visual style (e.g., hyper-realistic, neofuturistic)",
+            "palette": "Primary colors and lighting mood",
+            "details": "Technical texture details (e.g., bioluminescent, matte chrome)",
+            "composition": "Camera angle and framing (e.g., tight macro, epic panorama)"
+          },
           "closing": "1 short motivational phrase"
         }
       `;
 
-      // STRICT LOCK: GEMINI 2.5 FLASH - preview-04-17 is current live version
+      // STRICT LOCK: GEMINI 2.5 FLASH
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
@@ -58,7 +64,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!text) throw new Error("Empty AI response");
 
       const jsonResult = JSON.parse(text);
-      const imageQuery = encodeURIComponent(jsonResult.image_prompt + " cinematic masterpiece mystical creature portrait");
+      
+      // BUILD ENHANCED PROMPT FROM METADATA
+      const finalPrompt = `${jsonResult.image_prompt}. Style: ${jsonResult.metadata.style}, Palette: ${jsonResult.metadata.palette}, Details: ${jsonResult.metadata.details}, Composition: ${jsonResult.metadata.composition}`;
+      const imageQuery = encodeURIComponent(finalPrompt);
       const imageUrl = `https://image.pollinations.ai/prompt/${imageQuery}?width=800&height=800&model=flux&nologo=true&seed=${Date.now()}`;
 
       return res.status(200).json({ ...jsonResult, imageUrl });

@@ -5,6 +5,12 @@ export interface AlchemistResponse {
   image_prompt: string;
   closing: string;
   imageUrl?: string;
+  metadata?: {
+    style: string;
+    palette: string;
+    details: string;
+    composition: string;
+  };
 }
 
 export interface Message {

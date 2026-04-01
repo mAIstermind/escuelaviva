@@ -287,6 +287,32 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* Prompt Metadata Section */}
+                    {msg.data?.metadata && (
+                      <div className="p-4 bg-zinc-900 mx-5 mb-5 rounded-lg border border-white/10 shadow-inner group">
+                        <div className="flex justify-between items-center mb-3">
+                           <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#ffd166] opacity-60">Technical Handoff (JSON)</p>
+                           <button 
+                             onClick={() => {
+                               navigator.clipboard.writeText(JSON.stringify(msg.data?.metadata, null, 2));
+                               alert("JSON Prompt Data Copied!");
+                             }}
+                             className="text-[8px] bg-white/10 px-2 py-1 rounded hover:bg-white/20 transition-colors text-white uppercase font-bold"
+                           >
+                              Copy Data
+                           </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {Object.entries(msg.data.metadata).map(([key, val]) => (
+                            <div key={key} className="space-y-1">
+                              <p className="text-[8px] font-black text-emerald-400/70 uppercase tracking-tighter">{key}:</p>
+                              <p className="text-[10px] text-zinc-300 font-medium leading-tight">{val}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="p-3 bg-[#fdf2f2] border-t-2 border-[#111] text-center italic text-[#e85d04] font-bold text-xs">
                       {msg.data?.closing}
                     </div>
