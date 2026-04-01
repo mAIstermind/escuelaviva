@@ -10,6 +10,7 @@ export interface AlchemistResponse {
   leadership_challenge: string;
   image_prompt: string;
   closing: string;
+  native_image?: string;
 }
 
 export interface Message {
@@ -22,19 +23,25 @@ export interface Message {
 
 export async function generateCreature(word1: string, word2: string, word3: string, lang: string): Promise<AlchemistResponse> {
   const prompt = `
-    Summon a legendary creature based on: "${word1}", "${word2}", "${word3}".
+    Summon a legendary creature based on these 3 alchemy words: "${word1}", "${word2}", "${word3}".
     Language: ${lang === 'es' ? 'Spanish' : 'English'}.
     
-    Return a SHORTER JSON object:
-    - creature_name: (str) A name
-    - vision: (str) 1 poetic sentence
-    - leadership_challenge: (str) 2 sentences on leadership for youth
-    - image_prompt: (str) 3 keywords (e.g. mystical jaguar forest)
-    - closing: (str) 1 short motivational phrase
+    CRITICAL: YOU MUST RETURN BOTH TEXT AND A PORTRAIT.
+    
+    1. TEXT: Return a SHORTER JSON object:
+    {
+      "creature_name": "A unique name",
+      "vision": "1 poetic sentence description",
+      "leadership_challenge": "2 sentences on leadership",
+      "image_prompt": "cinematic description for your own portrait generation",
+      "closing": "1 short motivational phrase"
+    }
+
+    2. IMAGE: After the JSON, generate a 1:1 cinematic high-fidelity portrait of this creature.
   `;
 
-  // Standard REST URL for the verified 2.5-flash model
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  // Standard REST URL for the verified 2.0-flash model which supports NATIVE multimodal output
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -53,14 +60,32 @@ export async function generateCreature(word1: string, word2: string, word3: stri
   }
 
   const result = await response.json();
-  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Empty AI response");
-  return JSON.parse(text);
+  const parts = result.candidates?.[0]?.content?.parts || [];
+  
+  let jsonResult: any = {};
+  let imagePart: string | undefined;
+
+  for (const part of parts) {
+    if (part.text) {
+      try {
+        jsonResult = JSON.parse(part.text);
+      } catch (e) {
+        // Handle potential formatting issues
+        const match = part.text.match(/\{[\s\S]*\}/);
+        if (match) jsonResult = JSON.parse(match[0]);
+      }
+    }
+    if (part.inlineData) {
+      imagePart = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    }
+  }
+
+  if (imagePart) jsonResult.native_image = imagePart;
+  
+  return jsonResult;
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  // Using Pollinations.ai for high-speed, CORS-free AI image generation
-  // matched perfectly to the creature's keywords
-  const query = encodeURIComponent(prompt + " mystical legendary masterpiece");
-  return `https://pollinations.ai/p/${query}?width=800&height=800&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
+  // This is now a tier-2 backup only; the primary logic is one-shot native generation above.
+  return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=800&height=800&nologo=true`;
 }
