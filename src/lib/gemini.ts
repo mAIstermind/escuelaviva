@@ -33,5 +33,5 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 
 export async function generateImage(prompt: string): Promise<string> {
   // Now handled by the proxy, this is a local fallback returning the already-fetched URL
-  return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=800&height=800&nologo=true`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=800&model=flux&nologo=true&seed=${Date.now()}`;
 }
