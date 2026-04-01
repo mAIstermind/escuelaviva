@@ -16,18 +16,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const prompt = `
         Summon a unique leadership creature based on: "${word1}", "${word2}", "${word3}".
         Language: ${lang === 'es' ? 'Spanish' : 'English'}.
-        
-        Return a focus visual JSON object:
+
+        INSTRUCTION: You are a professional AI image engineer and a poetic visionary. 
+        The "metadata" section MUST be extremely technical, using sensory-rich keywords and professional art terminology. Avoid generic descriptions like 'realistic' or 'cinematic'. Use specific art movements, lighting temperatures, and camera hardware references.
+
+        Return this precise JSON structure:
         {
           "creature_name": "Unique Name",
-          "vision": "1-sentence visionary motto",
-          "leadership_challenge": "2 short sentences on leadership",
-          "image_prompt": "highly descriptive cinematic image prompt based on ${word1}, ${word2}, ${word3}",
+          "vision": "1-sentence high-level visionary motto",
+          "leadership_challenge": "2 short, piercing sentences on leadership",
+          "image_prompt": "100-word masterpiece prompt that is poetic yet hyper-descriptive, focusing on the synergy of ${word1}, ${word2}, and ${word3}",
           "metadata": {
-            "style": "Visual style",
-            "palette": "Color palette",
-            "details": "Technical texture details",
-            "composition": "Framing details"
+            "style": "Specific art movement (e.g., Cybernetic Expressionism, Giger-esque Biomechanics, Ultra-detailed Matte Painting)",
+            "palette": "Technical colors (e.g., Anodized Cobalt, 7000K Kelvin solar flares, obsidian-ink shadows)",
+            "details": "Hyper-technical texture info (e.g., micro-etched circuit paths on translucent obsidian skin, organic sargassum fibrous weaves with 8k displacement maps)",
+            "composition": "Professional camera specs (e.g., 24mm wide-angle lens, f/1.8 depth of field, Rembrandt lighting, dramatic low-angle silhouette)"
           },
           "closing": "Short motivational phrase"
         }
@@ -40,7 +43,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
+          generationConfig: { 
+            responseMimeType: "application/json",
+            temperature: 0.9, // Higher temperature for more creative/descriptive results
+          }
         })
       });
 
@@ -52,18 +58,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      if (!response.ok) {
-        const err: any = await response.json();
-        throw new Error(err.error?.message || "Google API Failed");
-      }
-
       const result: any = await response.json();
       const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error("Empty AI response");
 
       const jsonResult = JSON.parse(text);
-      
-      // CLEAN RESPONSE: Only return what is needed for the prompt engine
       return res.status(200).json(jsonResult);
 
     } catch (error: any) {
