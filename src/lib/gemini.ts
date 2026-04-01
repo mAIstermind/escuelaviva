@@ -29,50 +29,60 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     - creature_name: (str) A unique name
     - vision: (str) A 1-sentence poetic description
     - leadership_challenge: (str) A 2-sentence challenge related to youth leadership
-    - image_prompt: (str) 3 keywords for an image search (e.g. "mystical jungle jaguar")
+    - image_prompt: (str) A cinematic prompt for Imagen
     - closing: (str) A final motivating phrase
   `;
 
-  const candidates = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-2.0-flash-exp"];
-  
-  for (const modelId of candidates) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json"
-          }
-        })
-      });
+  // Explicitly using the verified IDs from the system audit
+  const modelId = "gemini-2.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
-      if (response.ok) {
-        const result = await response.json();
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return JSON.parse(text);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json"
       }
-    } catch (e) {
-      console.warn(`Scout failed for ${modelId}`);
-    }
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error?.message || "Alchemist Failed");
   }
 
-  // If even the candidates fail, we do a total system audit
-  try {
-     const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-     const listResp = await fetch(listUrl);
-     const listData = await listResp.json();
-     console.error("TOTAL MODELS AVAILABLE FOR THIS KEY:", listData.models?.map((m: any) => m.name));
-  } catch (e) {
-     console.error("Total audit failed.");
-  }
-
-  throw new Error("The Alchemist is blinded. Please check your Google AI Studio API key and quota.");
+  const result = await response.json();
+  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("Empty AI response");
+  return JSON.parse(text);
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  // Ultra-reliable mystical fetcher
-  return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60&sig=${Math.random()}`;
+  try {
+    // Verified Imagen 4.0 ID found in the project audit
+    const imageModel = "imagen-4.0-fast-generate-001";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:predict?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: [{ prompt: prompt }],
+        parameters: { sampleCount: 1, aspectRatio: "1:1" }
+      })
+    });
+
+    if (response.ok) {
+       const result = await response.json();
+       const data = result.predictions?.[0]?.bytesBase64Encoded || result.predictions?.[0]?.data;
+       if (data) return `data:image/png;base64,${data}`;
+    }
+  } catch (e) {
+    console.warn("Imagen 4.0 failed, falling back to mystical search.");
+  }
+
+  // Backup for quota limits
+  return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60`;
 }
