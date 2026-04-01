@@ -33,31 +33,43 @@ export async function generateCreature(word1: string, word2: string, word3: stri
     - closing: (str) A final motivating phrase
   `;
 
-  // We bypass the SDK and use direct REST to ensure 100% compatibility across regions
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const candidates = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro", "gemini-2.0-flash-exp"];
+  
+  for (const modelId of candidates) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        })
+      });
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json"
+      if (response.ok) {
+        const result = await response.json();
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return JSON.parse(text);
       }
-    })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    console.error("Alchemist Direct API Error:", error);
-    throw new Error(error.error?.message || "Failed to communicate with Alchemist");
+    } catch (e) {
+      console.warn(`Scout failed for ${modelId}`);
+    }
   }
 
-  const result = await response.json();
-  const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error("Empty Alchemist response");
-  
-  return JSON.parse(text);
+  // If even the candidates fail, we do a total system audit
+  try {
+     const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+     const listResp = await fetch(listUrl);
+     const listData = await listResp.json();
+     console.error("TOTAL MODELS AVAILABLE FOR THIS KEY:", listData.models?.map((m: any) => m.name));
+  } catch (e) {
+     console.error("Total audit failed.");
+  }
+
+  throw new Error("The Alchemist is blinded. Please check your Google AI Studio API key and quota.");
 }
 
 export async function generateImage(prompt: string): Promise<string> {
