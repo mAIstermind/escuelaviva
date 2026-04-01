@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       `;
 
-      // HARD LOCKED: GEMINI 2.5 FLASH ONLY
+      // STRICT LOCK: GEMINI 2.5 FLASH
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
@@ -42,8 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (response.status === 429) {
         attempts++;
         if (attempts < maxAttempts) {
-          // Intelligent 6-second hold to bypass Google's transient quota spike
-          await new Promise(resolve => setTimeout(resolve, 6000)); 
+          // MAXIMUM PERSISTENCE: 20-second hold to satisfy Google's mandatory wait (measured 14.6s)
+          await new Promise(resolve => setTimeout(resolve, 20000)); 
           continue;
         }
       }
@@ -68,7 +68,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
       }
       attempts++;
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Secondary hold for other errors
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
 }
