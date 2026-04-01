@@ -65,6 +65,8 @@ export default function App() {
     scrollToBottom();
   }, [messages]);
 
+  const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
+
   const handleAlchemize = async () => {
     if (!words.word1 || !words.word2 || !words.word3 || isLoading) return;
 
@@ -84,22 +86,18 @@ export default function App() {
         text: "",
         timestamp: Date.now(),
         data: result,
-        imageUrl: result.native_image // Use native image if available instantly
       };
       setMessages((prev) => [...prev, aiMessage]);
 
-      // Only pull a separate image if the native one failed or is missing
-      if (!result.native_image) {
-        const imageUrl = await generateImage(result.image_prompt);
-        setMessages((prev) => {
-          const newMessages = [...prev];
-          const last = newMessages[newMessages.length - 1];
-          if (last.role === "model") {
-            last.imageUrl = imageUrl;
-          }
-          return newMessages;
-        });
-      }
+      const imageUrl = await generateImage(result.image_prompt);
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const last = newMessages[newMessages.length - 1];
+        if (last.role === "model") {
+          last.imageUrl = imageUrl;
+        }
+        return newMessages;
+      });
 
     } catch (error) {
       console.error("Alchemist error:", error);
@@ -302,13 +300,21 @@ export default function App() {
                       <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(circle, #111 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                       
                       {msg.imageUrl ? (
-                        <motion.img 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          src={msg.imageUrl} 
-                          className="relative z-10 w-full h-full object-contain p-4" 
-                        />
-                      ) : (
+                            <div className="mt-4 rounded-xl overflow-hidden border-2 border-emerald-100 shadow-sm animate-fade-in relative group transition-all duration-300 hover:border-emerald-200 min-h-[300px] flex items-center justify-center bg-gray-50">
+                              {!imageLoading[msg.timestamp] && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-emerald-50/30 animate-pulse">
+                                  <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin"></div>
+                                  <p className="mt-4 text-emerald-800 font-medium font-serif italic">Summoning your creature...</p>
+                                </div>
+                              )}
+                              <img 
+                                src={msg.imageUrl} 
+                                alt={msg.data?.creature_name}
+                                className={`w-full h-auto object-cover transform transition-all duration-700 group-hover:scale-105 ${!imageLoading[msg.timestamp] ? 'opacity-0' : 'opacity-100'}`}
+                                onLoad={() => setImageLoading(prev => ({...prev, [msg.timestamp]: true}))}
+                              />
+                            </div>
+                          ) : (
                         <div className="relative z-10 flex flex-col items-center gap-2 text-zinc-300">
                           <Loader2 className="animate-spin w-10 h-10" />
                           <p className="text-[10px] font-black uppercase tracking-widest">{lang === 'es' ? 'Invocando...' : 'Summoning...'}</p>
