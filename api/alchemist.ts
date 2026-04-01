@@ -14,26 +14,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   while (attempts < maxAttempts) {
     try {
       const prompt = `
-        Summon a unique creature based on: "${word1}", "${word2}", "${word3}".
+        Summon a unique leadership creature based on: "${word1}", "${word2}", "${word3}".
         Language: ${lang === 'es' ? 'Spanish' : 'English'}.
         
-        Return a JSON object:
+        Return a focus visual JSON object:
         {
           "creature_name": "Unique Name",
-          "vision": "1-sentence poetic description",
-          "leadership_challenge": "2 short sentences on leadership for youth",
+          "vision": "1-sentence visionary motto",
+          "leadership_challenge": "2 short sentences on leadership",
           "image_prompt": "highly descriptive cinematic image prompt based on ${word1}, ${word2}, ${word3}",
           "metadata": {
-            "style": "Visual style (e.g., hyper-realistic, neofuturistic)",
-            "palette": "Primary colors and lighting mood",
-            "details": "Technical texture details (e.g., bioluminescent, matte chrome)",
-            "composition": "Camera angle and framing (e.g., tight macro, epic panorama)"
+            "style": "Visual style",
+            "palette": "Color palette",
+            "details": "Technical texture details",
+            "composition": "Framing details"
           },
-          "closing": "1 short motivational phrase"
+          "closing": "Short motivational phrase"
         }
       `;
 
-      // STRICT LOCK: GEMINI 2.5 FLASH
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
@@ -48,7 +47,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (response.status === 429) {
         attempts++;
         if (attempts < maxAttempts) {
-          console.log(`Deep rate limit hit. Waiting 65s for attempt ${attempts}...`);
           await new Promise(resolve => setTimeout(resolve, 65000));
           continue;
         }
@@ -65,12 +63,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const jsonResult = JSON.parse(text);
       
-      // BUILD ENHANCED PROMPT FROM METADATA
-      const finalPrompt = `${jsonResult.image_prompt}. Style: ${jsonResult.metadata.style}, Palette: ${jsonResult.metadata.palette}, Details: ${jsonResult.metadata.details}, Composition: ${jsonResult.metadata.composition}`;
-      const imageQuery = encodeURIComponent(finalPrompt);
-      const imageUrl = `https://image.pollinations.ai/prompt/${imageQuery}?width=800&height=800&model=flux&nologo=true&seed=${Date.now()}`;
-
-      return res.status(200).json({ ...jsonResult, imageUrl });
+      // CLEAN RESPONSE: Only return what is needed for the prompt engine
+      return res.status(200).json(jsonResult);
 
     } catch (error: any) {
       if (attempts >= maxAttempts - 1) {

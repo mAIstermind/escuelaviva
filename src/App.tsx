@@ -60,11 +60,10 @@ export default function App() {
 
     try {
       const result = await generateCreature(words.word1, words.word2, words.word3, lang);
-      const fullPrompt = `${result.image_prompt}. Style: ${result.metadata?.style}, Palette: ${result.metadata?.palette}, Details: ${result.metadata?.details}, Composition: ${result.metadata?.composition}`;
       
       const aiMessage: Message = {
         role: "model",
-        text: fullPrompt,
+        text: result.image_prompt, // Focus on the visual prompt here
         timestamp: Date.now(),
         data: result,
       };
