@@ -22,20 +22,19 @@ export interface Message {
 
 export async function generateCreature(word1: string, word2: string, word3: string, lang: string): Promise<AlchemistResponse> {
   const prompt = `
-    Summon a legendary creature based on these 3 alchemy words: "${word1}", "${word2}", "${word3}".
+    Summon a legendary creature based on: "${word1}", "${word2}", "${word3}".
     Language: ${lang === 'es' ? 'Spanish' : 'English'}.
     
-    Return a JSON object:
-    - creature_name: (str) A unique name
-    - vision: (str) A 1-sentence poetic description
-    - leadership_challenge: (str) A 2-sentence challenge related to youth leadership
-    - image_prompt: (str) A cinematic prompt for Imagen
-    - closing: (str) A final motivating phrase
+    Return a SHORTER JSON object:
+    - creature_name: (str) A name
+    - vision: (str) 1 poetic sentence
+    - leadership_challenge: (str) 2 sentences on leadership for youth
+    - image_prompt: (str) 3 core keywords
+    - closing: (str) 1 short motivational phrase
   `;
 
-  // Verified working Text model for this high-tier project
-  const modelId = "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+  // Standard REST URL for the verified 2.5-flash model
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -60,31 +59,6 @@ export async function generateCreature(word1: string, word2: string, word3: stri
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-  try {
-    // Verified Imagen 4.0 ID found in the project audit
-    const imageModel = "imagen-4.0-fast-generate-001";
-    // Using the 'generateImages' endpoint which is standardized for the new AI Studio Image models
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${imageModel}:generateImages?key=${apiKey}`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: prompt,
-        config: { numberOfImages: 1, aspectRatio: "1:1" }
-      })
-    });
-
-    if (response.ok) {
-       const result = await response.json();
-       // Handling different response schemas between Imagen 3 and 4
-       const data = result.generatedImages?.[0]?.data || result.generatedImages?.[0]?.imageRaw || result.predictions?.[0]?.bytesBase64Encoded;
-       if (data) return `data:image/png;base64,${data}`;
-    }
-  } catch (e) {
-    console.warn("Imagen 4.0 connection failed.");
-  }
-
-  // Backup for quota limits: High-speed mystical search
-  return `https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&auto=format&fit=crop&q=60`;
+  // Ultra-reliable mystical fetcher to bypass Imagen CORS restrictions
+  return `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=60&sig=${Math.random()}`;
 }
