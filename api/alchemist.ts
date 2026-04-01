@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const jsonResult = JSON.parse(text);
       const imageQuery = encodeURIComponent(jsonResult.image_prompt + " cinematic masterpiece mystical creature portrait");
-      const imageUrl = `https://image.pollinations.ai/prompt/${imageQuery}?width=800&height=800&nologo=true&seed=${Date.now()}`;
+      const imageUrl = `https://image.pollinations.ai/prompt/${imageQuery}?width=800&height=800&model=flux&nologo=true&seed=${Date.now()}`;
 
       return res.status(200).json({ ...jsonResult, imageUrl });
 
